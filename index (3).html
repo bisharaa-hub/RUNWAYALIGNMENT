@@ -1,0 +1,1636 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+<title>Runway Alignment Guidance System | Mini ILS</title>
+
+<style>
+:root{
+    --bg:#07111f;
+    --panel:#0d1b2e;
+    --panel2:#10243b;
+    --border:#1f3b5b;
+    --text:#e8f1ff;
+    --muted:#8fa6c1;
+    --green:#25e39a;
+    --red:#ff5570;
+    --amber:#ffbf47;
+    --blue:#45a3ff;
+    --cyan:#39d8ff;
+    --purple:#a678ff;
+}
+
+*{
+    box-sizing:border-box;
+}
+
+body{
+    margin:0;
+    background:
+        radial-gradient(circle at 10% 10%,rgba(69,163,255,.12),transparent 25%),
+        radial-gradient(circle at 90% 20%,rgba(37,227,154,.08),transparent 25%),
+        var(--bg);
+    color:var(--text);
+    font-family:Arial,Helvetica,sans-serif;
+}
+
+header{
+    padding:22px 30px;
+    border-bottom:1px solid var(--border);
+    background:rgba(7,17,31,.92);
+    position:sticky;
+    top:0;
+    z-index:20;
+    backdrop-filter:blur(12px);
+}
+
+.header-row{
+    display:flex;
+    justify-content:space-between;
+    align-items:center;
+    gap:20px;
+}
+
+.logo-area{
+    display:flex;
+    align-items:center;
+    gap:14px;
+}
+
+.logo{
+    width:48px;
+    height:48px;
+    border:2px solid var(--cyan);
+    border-radius:12px;
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    font-size:22px;
+    color:var(--cyan);
+    box-shadow:0 0 20px rgba(57,216,255,.2);
+}
+
+h1{
+    margin:0;
+    font-size:22px;
+    letter-spacing:.5px;
+}
+
+.subtitle{
+    color:var(--muted);
+    font-size:12px;
+    margin-top:4px;
+}
+
+.system-status{
+    display:flex;
+    align-items:center;
+    gap:9px;
+    color:var(--green);
+    font-size:13px;
+}
+
+.status-dot{
+    width:9px;
+    height:9px;
+    border-radius:50%;
+    background:var(--green);
+    box-shadow:0 0 12px var(--green);
+}
+
+.container{
+    max-width:1500px;
+    margin:auto;
+    padding:24px;
+}
+
+.filters{
+    display:grid;
+    grid-template-columns:repeat(5,1fr);
+    gap:12px;
+    margin-bottom:20px;
+}
+
+.filter{
+    background:var(--panel);
+    border:1px solid var(--border);
+    border-radius:10px;
+    padding:11px 13px;
+}
+
+.filter label{
+    display:block;
+    color:var(--muted);
+    font-size:10px;
+    text-transform:uppercase;
+    letter-spacing:1px;
+    margin-bottom:6px;
+}
+
+select{
+    width:100%;
+    background:#091626;
+    border:1px solid var(--border);
+    color:var(--text);
+    padding:9px;
+    border-radius:7px;
+    outline:none;
+}
+
+.dashboard{
+    display:grid;
+    grid-template-columns:repeat(12,1fr);
+    gap:16px;
+}
+
+.card{
+    background:linear-gradient(145deg,var(--panel),#091728);
+    border:1px solid var(--border);
+    border-radius:13px;
+    padding:18px;
+    box-shadow:0 8px 30px rgba(0,0,0,.15);
+}
+
+.card-title{
+    font-size:11px;
+    color:var(--muted);
+    text-transform:uppercase;
+    letter-spacing:1.3px;
+    margin-bottom:14px;
+}
+
+.overview{
+    grid-column:span 3;
+}
+
+.big-value{
+    font-size:31px;
+    font-weight:700;
+    margin:5px 0;
+}
+
+.small{
+    color:var(--muted);
+    font-size:12px;
+}
+
+.green{
+    color:var(--green);
+}
+
+.red{
+    color:var(--red);
+}
+
+.amber{
+    color:var(--amber);
+}
+
+.blue{
+    color:var(--blue);
+}
+
+.cyan{
+    color:var(--cyan);
+}
+
+.node-grid{
+    grid-column:span 12;
+    display:grid;
+    grid-template-columns:repeat(3,1fr);
+    gap:16px;
+}
+
+.node-card{
+    position:relative;
+    overflow:hidden;
+}
+
+.node-card::before{
+    content:"";
+    position:absolute;
+    left:0;
+    top:0;
+    width:4px;
+    height:100%;
+    background:var(--blue);
+}
+
+.node-card.center::before{
+    background:var(--green);
+}
+
+.node-card.right::before{
+    background:var(--red);
+}
+
+.node-header{
+    display:flex;
+    justify-content:space-between;
+    align-items:center;
+}
+
+.node-name{
+    font-size:19px;
+    font-weight:bold;
+}
+
+.node-online{
+    font-size:10px;
+    padding:5px 8px;
+    border-radius:20px;
+    background:rgba(37,227,154,.12);
+    color:var(--green);
+    border:1px solid rgba(37,227,154,.25);
+}
+
+.rssi{
+    font-size:34px;
+    font-weight:bold;
+    margin:15px 0 5px;
+}
+
+.signal-bar{
+    height:7px;
+    background:#07111f;
+    border-radius:20px;
+    overflow:hidden;
+    margin:8px 0 15px;
+}
+
+.signal-fill{
+    height:100%;
+    border-radius:20px;
+    background:linear-gradient(90deg,var(--red),var(--amber),var(--green));
+    transition:width .5s;
+}
+
+.node-stats{
+    display:grid;
+    grid-template-columns:repeat(2,1fr);
+    gap:8px;
+}
+
+.stat{
+    background:rgba(255,255,255,.025);
+    padding:9px;
+    border-radius:7px;
+}
+
+.stat-label{
+    color:var(--muted);
+    font-size:10px;
+}
+
+.stat-value{
+    font-size:14px;
+    font-weight:bold;
+    margin-top:3px;
+}
+
+.alignment{
+    grid-column:span 5;
+}
+
+.alignment-box{
+    min-height:250px;
+    display:flex;
+    flex-direction:column;
+    justify-content:center;
+    align-items:center;
+}
+
+.alignment-indicator{
+    width:180px;
+    height:180px;
+    border-radius:50%;
+    border:2px solid var(--border);
+    position:relative;
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    background:
+        radial-gradient(circle,#102b43 0%,#0b1a2c 65%,#07111f 100%);
+}
+
+.alignment-indicator::before{
+    content:"";
+    position:absolute;
+    width:2px;
+    height:150px;
+    background:rgba(255,255,255,.15);
+}
+
+.alignment-indicator::after{
+    content:"";
+    position:absolute;
+    width:150px;
+    height:2px;
+    background:rgba(255,255,255,.15);
+}
+
+.aircraft{
+    width:22px;
+    height:22px;
+    border-radius:50%;
+    background:var(--green);
+    box-shadow:0 0 25px var(--green);
+    z-index:3;
+    position:absolute;
+    transition:.6s;
+}
+
+.alignment-text{
+    margin-top:18px;
+    font-size:22px;
+    font-weight:bold;
+}
+
+.alignment-sub{
+    color:var(--muted);
+    margin-top:5px;
+    font-size:12px;
+}
+
+.chart-card{
+    grid-column:span 7;
+}
+
+canvas{
+    width:100%;
+    height:290px;
+    display:block;
+}
+
+.fingerprint{
+    grid-column:span 4;
+}
+
+.fingerprint-grid{
+    display:grid;
+    grid-template-columns:repeat(3,1fr);
+    gap:8px;
+}
+
+.fingerprint-node{
+    text-align:center;
+    background:#081625;
+    padding:14px 5px;
+    border-radius:9px;
+}
+
+.fingerprint-value{
+    font-size:20px;
+    font-weight:bold;
+    margin-top:6px;
+}
+
+.fingerprint-label{
+    font-size:9px;
+    color:var(--muted);
+}
+
+.angle-card{
+    grid-column:span 4;
+}
+
+.angle-layout{
+    display:grid;
+    grid-template-columns:repeat(2,1fr);
+    gap:10px;
+}
+
+.angle{
+    background:#081625;
+    padding:13px;
+    border-radius:8px;
+}
+
+.angle-name{
+    color:var(--muted);
+    font-size:10px;
+}
+
+.angle-value{
+    font-size:24px;
+    margin-top:5px;
+    font-weight:bold;
+}
+
+.runway{
+    grid-column:span 4;
+}
+
+.runway-map{
+    height:290px;
+    position:relative;
+    background:
+        linear-gradient(90deg,
+        transparent 49%,
+        rgba(255,255,255,.16) 49.5%,
+        rgba(255,255,255,.16) 50.5%,
+        transparent 51%);
+    overflow:hidden;
+    border-radius:10px;
+}
+
+.runway-surface{
+    position:absolute;
+    width:44%;
+    height:100%;
+    left:28%;
+    background:#182b40;
+    border-left:2px solid #536b83;
+    border-right:2px solid #536b83;
+}
+
+.centerline{
+    position:absolute;
+    left:50%;
+    top:0;
+    width:3px;
+    height:100%;
+    transform:translateX(-50%);
+    background:repeating-linear-gradient(
+        to bottom,
+        #fff 0,
+        #fff 22px,
+        transparent 22px,
+        transparent 42px
+    );
+}
+
+.node-point{
+    position:absolute;
+    width:14px;
+    height:14px;
+    border-radius:50%;
+    transform:translate(-50%,-50%);
+    z-index:4;
+}
+
+.left-point{
+    left:35%;
+    top:85%;
+    background:var(--blue);
+    box-shadow:0 0 15px var(--blue);
+}
+
+.center-point{
+    left:50%;
+    top:85%;
+    background:var(--green);
+    box-shadow:0 0 15px var(--green);
+}
+
+.right-point{
+    left:65%;
+    top:85%;
+    background:var(--red);
+    box-shadow:0 0 15px var(--red);
+}
+
+.aircraft-map{
+    position:absolute;
+    width:20px;
+    height:20px;
+    border-radius:50%;
+    background:var(--amber);
+    box-shadow:0 0 20px var(--amber);
+    transform:translate(-50%,-50%);
+    z-index:5;
+    transition:.8s;
+}
+
+.map-label{
+    position:absolute;
+    font-size:9px;
+    color:var(--muted);
+}
+
+.live-log{
+    grid-column:span 8;
+}
+
+.log{
+    height:300px;
+    overflow:auto;
+    font-family:Consolas,monospace;
+    font-size:11px;
+}
+
+.log-row{
+    display:grid;
+    grid-template-columns:80px 80px 1fr 80px;
+    gap:10px;
+    padding:8px 5px;
+    border-bottom:1px solid rgba(255,255,255,.04);
+}
+
+.log-time{
+    color:var(--muted);
+}
+
+.log-node{
+    color:var(--cyan);
+}
+
+.log-message{
+    color:#dce9f7;
+}
+
+.log-status{
+    text-align:right;
+}
+
+.agreement{
+    grid-column:span 4;
+}
+
+.agreement-score{
+    font-size:45px;
+    font-weight:bold;
+    text-align:center;
+    margin:25px 0;
+}
+
+.progress{
+    height:10px;
+    background:#07111f;
+    border-radius:20px;
+    overflow:hidden;
+}
+
+.progress-fill{
+    height:100%;
+    background:var(--green);
+    transition:.5s;
+}
+
+footer{
+    padding:25px;
+    text-align:center;
+    color:#66809d;
+    font-size:11px;
+}
+
+.live-pill{
+    display:inline-flex;
+    align-items:center;
+    gap:7px;
+    border:1px solid rgba(37,227,154,.3);
+    background:rgba(37,227,154,.07);
+    color:var(--green);
+    padding:6px 10px;
+    border-radius:20px;
+    font-size:10px;
+}
+
+.toggle{
+    display:flex;
+    align-items:center;
+    gap:8px;
+}
+
+.toggle input{
+    accent-color:var(--green);
+}
+
+@media(max-width:1000px){
+
+    .filters{
+        grid-template-columns:repeat(2,1fr);
+    }
+
+    .overview,
+    .chart-card,
+    .alignment,
+    .fingerprint,
+    .angle-card,
+    .runway,
+    .live-log,
+    .agreement{
+        grid-column:span 12;
+    }
+
+    .node-grid{
+        grid-template-columns:1fr;
+    }
+}
+
+@media(max-width:600px){
+
+    .container{
+        padding:12px;
+    }
+
+    .filters{
+        grid-template-columns:1fr;
+    }
+
+    .header-row{
+        align-items:flex-start;
+        flex-direction:column;
+    }
+
+    .node-grid{
+        grid-template-columns:1fr;
+    }
+
+    .log-row{
+        grid-template-columns:65px 65px 1fr;
+    }
+
+    .log-status{
+        display:none;
+    }
+}
+</style>
+</head>
+
+<body>
+
+<header>
+
+<div class="header-row">
+
+<div class="logo-area">
+
+<div class="logo">ILS</div>
+
+<div>
+<h1>Runway Alignment Guidance System</h1>
+<div class="subtitle">
+3-Node ESP32 Mini ILS Simulation • RSSI Fingerprinting • Runway Guidance
+</div>
+</div>
+
+</div>
+
+<div class="system-status">
+<span class="status-dot"></span>
+SYSTEM ONLINE
+</div>
+
+</div>
+
+</header>
+
+
+<div class="container">
+
+<!-- FILTER SECTION -->
+
+<div class="filters">
+
+<div class="filter">
+
+<label>Meridian Reference</label>
+
+<select id="meridianFilter" onchange="applyFilters()">
+<option value="all">All Meridians</option>
+<option value="000">000° / North</option>
+<option value="090">090° / East</option>
+<option value="180">180° / South</option>
+<option value="270">270° / West</option>
+</select>
+
+</div>
+
+
+<div class="filter">
+
+<label>Runway Alignment</label>
+
+<select id="alignmentFilter" onchange="applyFilters()">
+<option value="all">All Alignment</option>
+<option value="center">ON CENTERLINE</option>
+<option value="left">LEFT DRIFT</option>
+<option value="right">RIGHT DRIFT</option>
+</select>
+
+</div>
+
+
+<div class="filter">
+
+<label>RSSI Fingerprinting</label>
+
+<select id="rssiFilter" onchange="applyFilters()">
+<option value="all">All RSSI</option>
+<option value="strong">Strong Signal</option>
+<option value="medium">Medium Signal</option>
+<option value="weak">Weak Signal</option>
+</select>
+
+</div>
+
+
+<div class="filter">
+
+<label>Node Filter</label>
+
+<select id="nodeFilter" onchange="applyFilters()">
+<option value="all">ALL 3 NODES</option>
+<option value="left">LEFT NODE</option>
+<option value="center">CENTER NODE</option>
+<option value="right">RIGHT NODE</option>
+</select>
+
+</div>
+
+
+<div class="filter">
+
+<label>Simulation</label>
+
+<div class="toggle">
+
+<input type="checkbox" id="simulationToggle" checked>
+
+<span class="live-pill">LIVE SIMULATION</span>
+
+</div>
+
+</div>
+
+</div>
+
+
+<!-- DASHBOARD -->
+
+<div class="dashboard">
+
+
+<!-- OVERVIEW -->
+
+<div class="card overview">
+
+<div class="card-title">Current Alignment</div>
+
+<div id="alignmentValue" class="big-value green">
+ON CENTERLINE
+</div>
+
+<div class="small">
+Aircraft Guidance Decision
+</div>
+
+<br>
+
+<div class="small">Lateral Error</div>
+
+<div id="lateralError" class="big-value">
+0.8°
+</div>
+
+</div>
+
+
+<div class="card overview">
+
+<div class="card-title">Aircraft RSSI</div>
+
+<div id="avgRSSI" class="big-value cyan">
+-57 dBm
+</div>
+
+<div class="small">
+3-node averaged signal
+</div>
+
+<br>
+
+<div class="small">Signal Confidence</div>
+
+<div id="confidence" class="big-value green">
+94%
+</div>
+
+</div>
+
+
+<div class="card overview">
+
+<div class="card-title">Heading</div>
+
+<div id="headingValue" class="big-value">
+002°
+</div>
+
+<div class="small">
+Relative runway heading
+</div>
+
+<br>
+
+<div class="small">Meridian</div>
+
+<div id="meridianValue" class="big-value blue">
+000°
+</div>
+
+</div>
+
+
+<div class="card overview">
+
+<div class="card-title">Node Agreement</div>
+
+<div id="nodeAgreement" class="big-value green">
+3 / 3
+</div>
+
+<div class="small">
+ESP32 nodes agreeing
+</div>
+
+<br>
+
+<div class="small">Last update</div>
+
+<div id="lastUpdate" class="big-value">
+--:--
+</div>
+
+</div>
+
+
+<!-- NODE CARDS -->
+
+<div class="node-grid">
+
+<!-- LEFT NODE -->
+
+<div class="card node-card left">
+
+<div class="node-header">
+
+<div class="node-name">LEFT NODE</div>
+
+<div class="node-online">
+● ONLINE
+</div>
+
+</div>
+
+<div class="small">
+ESP32-L • Runway Left Sensor
+</div>
+
+<div id="leftRSSI" class="rssi blue">
+-61 dBm
+</div>
+
+<div class="signal-bar">
+<div id="leftBar" class="signal-fill" style="width:70%"></div>
+</div>
+
+<div class="node-stats">
+
+<div class="stat">
+<div class="stat-label">ANGLE</div>
+<div id="leftAngle" class="stat-value">-4.2°</div>
+</div>
+
+<div class="stat">
+<div class="stat-label">DISTANCE</div>
+<div id="leftDistance" class="stat-value">82 m</div>
+</div>
+
+<div class="stat">
+<div class="stat-label">CHANNEL</div>
+<div class="stat-value">WiFi CH 6</div>
+</div>
+
+<div class="stat">
+<div class="stat-label">LATENCY</div>
+<div id="leftLatency" class="stat-value">18 ms</div>
+</div>
+
+</div>
+
+</div>
+
+
+<!-- CENTER NODE -->
+
+<div class="card node-card center">
+
+<div class="node-header">
+
+<div class="node-name">CENTER NODE</div>
+
+<div class="node-online">
+● ONLINE
+</div>
+
+</div>
+
+<div class="small">
+ESP32-C • Runway Guidance Controller
+</div>
+
+<div id="centerRSSI" class="rssi green">
+-57 dBm
+</div>
+
+<div class="signal-bar">
+<div id="centerBar" class="signal-fill" style="width:78%"></div>
+</div>
+
+<div class="node-stats">
+
+<div class="stat">
+<div class="stat-label">ANGLE</div>
+<div id="centerAngle" class="stat-value">0.8°</div>
+</div>
+
+<div class="stat">
+<div class="stat-label">DISTANCE</div>
+<div id="centerDistance" class="stat-value">79 m</div>
+</div>
+
+<div class="stat">
+<div class="stat-label">BUZZER</div>
+<div id="buzzerState" class="stat-value green">READY</div>
+</div>
+
+<div class="stat">
+<div class="stat-label">LATENCY</div>
+<div id="centerLatency" class="stat-value">15 ms</div>
+</div>
+
+</div>
+
+</div>
+
+
+<!-- RIGHT NODE -->
+
+<div class="card node-card right">
+
+<div class="node-header">
+
+<div class="node-name">RIGHT NODE</div>
+
+<div class="node-online">
+● ONLINE
+</div>
+
+</div>
+
+<div class="small">
+ESP32-R • Runway Right Sensor
+</div>
+
+<div id="rightRSSI" class="rssi red">
+-65 dBm
+</div>
+
+<div class="signal-bar">
+<div id="rightBar" class="signal-fill" style="width:60%"></div>
+</div>
+
+<div class="node-stats">
+
+<div class="stat">
+<div class="stat-label">ANGLE</div>
+<div id="rightAngle" class="stat-value">5.1°</div>
+</div>
+
+<div class="stat">
+<div class="stat-label">DISTANCE</div>
+<div id="rightDistance" class="stat-value">86 m</div>
+</div>
+
+<div class="stat">
+<div class="stat-label">CHANNEL</div>
+<div class="stat-value">WiFi CH 6</div>
+</div>
+
+<div class="stat">
+<div class="stat-label">LATENCY</div>
+<div id="rightLatency" class="stat-value">21 ms</div>
+</div>
+
+</div>
+
+</div>
+
+</div>
+
+
+<!-- ALIGNMENT INDICATOR -->
+
+<div class="card alignment">
+
+<div class="card-title">
+ILS Localizer Alignment
+</div>
+
+<div class="alignment-box">
+
+<div class="alignment-indicator">
+
+<div id="aircraftIndicator" class="aircraft"></div>
+
+</div>
+
+<div id="alignmentText" class="alignment-text green">
+ON CENTERLINE
+</div>
+
+<div id="alignmentSub" class="alignment-sub">
+Stable runway approach
+</div>
+
+</div>
+
+</div>
+
+
+<!-- GRAPH -->
+
+<div class="card chart-card">
+
+<div class="card-title">
+
+RSSI Fingerprint Graph
+
+<span style="float:right">
+<span class="live-pill">● LIVE</span>
+</span>
+
+</div>
+
+<canvas id="rssiChart"></canvas>
+
+</div>
+
+
+<!-- RSSI FINGERPRINT -->
+
+<div class="card fingerprint">
+
+<div class="card-title">
+RSSI Fingerprinting
+</div>
+
+<div class="fingerprint-grid">
+
+<div class="fingerprint-node">
+
+<div class="fingerprint-label">LEFT</div>
+
+<div id="fpLeft" class="fingerprint-value blue">
+-61
+</div>
+
+<div class="fingerprint-label">dBm</div>
+
+</div>
+
+
+<div class="fingerprint-node">
+
+<div class="fingerprint-label">CENTER</div>
+
+<div id="fpCenter" class="fingerprint-value green">
+-57
+</div>
+
+<div class="fingerprint-label">dBm</div>
+
+</div>
+
+
+<div class="fingerprint-node">
+
+<div class="fingerprint-label">RIGHT</div>
+
+<div id="fpRight" class="fingerprint-value red">
+-65
+</div>
+
+<div class="fingerprint-label">dBm</div>
+
+</div>
+
+</div>
+
+<br>
+
+<div class="small">
+Fingerprint Pattern
+</div>
+
+<div id="fingerprintPattern"
+style="font-size:17px;font-weight:bold;margin-top:8px;">
+CENTER DOMINANT
+</div>
+
+<br>
+
+<div class="small">
+RSSI Difference
+</div>
+
+<div id="rssiDifference"
+style="font-size:20px;font-weight:bold;margin-top:5px;">
+8 dB
+</div>
+
+</div>
+
+
+<!-- ANGLES -->
+
+<div class="card angle-card">
+
+<div class="card-title">
+Guidance Angles
+</div>
+
+<div class="angle-layout">
+
+<div class="angle">
+
+<div class="angle-name">
+LOCALIZER ANGLE
+</div>
+
+<div id="localizerAngle" class="angle-value green">
++0.8°
+</div>
+
+</div>
+
+
+<div class="angle">
+
+<div class="angle-name">
+LATERAL ERROR
+</div>
+
+<div id="angleLateral" class="angle-value">
+0.8°
+</div>
+
+</div>
+
+
+<div class="angle">
+
+<div class="angle-name">
+RUNWAY HEADING
+</div>
+
+<div id="runwayHeading" class="angle-value blue">
+002°
+</div>
+
+</div>
+
+
+<div class="angle">
+
+<div class="angle-name">
+MERIDIAN OFFSET
+</div>
+
+<div id="meridianOffset" class="angle-value amber">
++2°
+</div>
+
+</div>
+
+</div>
+
+</div>
+
+
+<!-- RUNWAY MAP -->
+
+<div class="card runway">
+
+<div class="card-title">
+Runway Node Geometry
+</div>
+
+<div class="runway-map">
+
+<div class="runway-surface"></div>
+
+<div class="centerline"></div>
+
+<div class="node-point left-point"></div>
+<div class="node-point center-point"></div>
+<div class="node-point right-point"></div>
+
+<div id="aircraftMap" class="aircraft-map"
+style="left:50%;top:25%;"></div>
+
+<div class="map-label" style="left:29%;bottom:7%;">
+LEFT
+</div>
+
+<div class="map-label" style="left:47%;bottom:7%;">
+CENTER
+</div>
+
+<div class="map-label" style="left:61%;bottom:7%;">
+RIGHT
+</div>
+
+</div>
+
+</div>
+
+
+<!-- LIVE LOG -->
+
+<div class="card live-log">
+
+<div class="card-title">
+Live System Log
+</div>
+
+<div id="log" class="log"></div>
+
+</div>
+
+
+<!-- AGREEMENT -->
+
+<div class="card agreement">
+
+<div class="card-title">
+3-Node Decision Agreement
+</div>
+
+<div id="agreementScore"
+class="agreement-score green">
+96%
+</div>
+
+<div class="progress">
+
+<div id="agreementProgress"
+class="progress-fill"
+style="width:96%">
+</div>
+
+</div>
+
+<br>
+
+<div class="small">
+Decision generated from independent RSSI observations from:
+</div>
+
+<br>
+
+<div class="small">
+● ESP32 LEFT<br>
+● ESP32 CENTER<br>
+● ESP32 RIGHT
+</div>
+
+<br>
+
+<div id="decisionText"
+class="green"
+style="font-weight:bold;">
+CENTERLINE CONFIRMED
+</div>
+
+</div>
+
+</div>
+
+</div>
+
+
+<footer>
+
+Runway Alignment Guidance System • Mini ILS Simulation<br>
+3 ESP32 Network Nodes • RSSI Fingerprinting • Localizer Guidance
+
+</footer>
+
+
+<script>
+/* =========================================================
+   REAL ESP32 RUNWAY GUIDANCE
+   No simulation / no Math.random sensor values
+   CENTER API: http://CENTER-ESP32/api/status
+   ========================================================= */
+
+const CONFIG = {
+    API_BASE_URL: "http://10.193.246.25",
+    UPDATE_INTERVAL: 1000,
+    RUNWAY_HEADING: 0,
+    MERIDIAN: 0,
+    ENABLE_SIMULATION: false
+};
+
+let history = [];
+
+let state = {
+    leftRSSI: null,
+    centerRSSI: null,
+    rightRSSI: null,
+    leftAngle: null,
+    centerAngle: null,
+    rightAngle: null,
+    distance: null,
+    heading: 0,
+    meridian: 0,
+    alignment: "waiting",
+    guidance: "WAITING",
+    difference: null,
+    confidence: null,
+    ip: ""
+};
+
+const canvas = document.getElementById("rssiChart");
+const ctx = canvas.getContext("2d");
+
+function validNumber(v){ return typeof v === "number" && Number.isFinite(v); }
+function timeNow(){ return new Date().toLocaleTimeString(); }
+function rssiToPercent(rssi){
+    if(!validNumber(rssi)) return 0;
+    return Math.max(0,Math.min(100,((rssi+100)/65)*100));
+}
+function formatAngle(value){
+    if(!validNumber(value)) return "--°";
+    let n=Math.round(value);
+    if(n<0) n=360+n;
+    return String(n).padStart(3,"0")+"°";
+}
+function setText(id,value){
+    const el=document.getElementById(id);
+    if(el) el.textContent=value;
+}
+function setOnline(id,online){
+    const el=document.getElementById(id);
+    if(!el) return;
+    el.textContent=online?"● ONLINE":"● OFFLINE";
+    el.style.color=online?"var(--green)":"var(--red)";
+}
+
+function addLog(node,message,status="OK"){
+    const log=document.getElementById("log");
+    const row=document.createElement("div");
+    row.className="log-row";
+    row.innerHTML=`<div class="log-time">${timeNow()}</div><div class="log-node">${node}</div><div class="log-message"></div><div class="log-status">${status}</div>`;
+    row.children[2].textContent=message;
+    log.prepend(row);
+    while(log.children.length>50) log.removeChild(log.lastChild);
+}
+
+function estimateAngles(){
+    if(!validNumber(state.difference)) return;
+    /* Display-only estimate from real L-R RSSI difference. Not calibrated ILS data. */
+    const a=Math.max(-10,Math.min(10,state.difference*0.35));
+    state.centerAngle=a;
+    state.leftAngle=a-3;
+    state.rightAngle=a+3;
+}
+
+function calculateConfidence(){
+    if(!validNumber(state.leftRSSI)||!validNumber(state.rightRSSI)) return null;
+    const d=Math.abs(state.leftRSSI-state.rightRSSI);
+    if(d<=1) return 100;
+    if(d<=3) return 95;
+    if(d<=5) return 90;
+    if(d<=10) return 80;
+    if(d<=15) return 70;
+    return 55;
+}
+
+function clearInitialValues(){
+    ["leftRSSI","centerRSSI","rightRSSI"].forEach(id=>setText(id,"-- dBm"));
+    ["fpLeft","fpCenter","fpRight"].forEach(id=>setText(id,"--"));
+    ["leftAngle","centerAngle","rightAngle","localizerAngle","angleLateral","meridianOffset","lateralError"].forEach(id=>setText(id,"--°"));
+    ["leftDistance","centerDistance","rightDistance"].forEach(id=>setText(id,"--"));
+    setText("avgRSSI","-- dBm"); setText("confidence","--");
+    setText("alignmentValue","WAITING"); setText("alignmentText","WAITING");
+    setText("alignmentSub","Waiting for real ESP32 data");
+    setText("fingerprintPattern","WAITING"); setText("rssiDifference","-- dB");
+    setText("agreementScore","--"); setText("nodeAgreement","0 / 3");
+    setText("decisionText","WAITING FOR REAL DATA");
+}
+
+function updateUI(){
+    if(validNumber(state.leftRSSI)){
+        setText("leftRSSI",Math.round(state.leftRSSI)+" dBm");
+        setText("fpLeft",Math.round(state.leftRSSI));
+        setText("leftStatRSSI",Math.round(state.leftRSSI)+" dBm");
+        document.getElementById("leftBar").style.width=rssiToPercent(state.leftRSSI)+"%";
+    }
+    if(validNumber(state.centerRSSI)){
+        setText("centerRSSI",Math.round(state.centerRSSI)+" dBm");
+        setText("fpCenter",Math.round(state.centerRSSI));
+        setText("centerStatRSSI",Math.round(state.centerRSSI)+" dBm");
+        document.getElementById("centerBar").style.width=rssiToPercent(state.centerRSSI)+"%";
+    }
+    if(validNumber(state.rightRSSI)){
+        setText("rightRSSI",Math.round(state.rightRSSI)+" dBm");
+        setText("fpRight",Math.round(state.rightRSSI));
+        setText("rightStatRSSI",Math.round(state.rightRSSI)+" dBm");
+        document.getElementById("rightBar").style.width=rssiToPercent(state.rightRSSI)+"%";
+    }
+
+    if(validNumber(state.distance)){
+        const d=state.distance.toFixed(1)+" cm";
+        setText("centerDistance",d); setText("distanceTop",d); setText("geometryDistance",d);
+    }
+
+    if(validNumber(state.difference)){
+        const d=(state.difference>0?"+":"")+state.difference.toFixed(1)+" dB";
+        setText("rssiDifference",d); setText("rssiDifferenceTop",d); setText("angleDifference",d);
+    }
+
+    const avgVals=[state.leftRSSI,state.centerRSSI,state.rightRSSI].filter(validNumber);
+    if(avgVals.length) setText("avgRSSI",Math.round(avgVals.reduce((a,b)=>a+b,0)/avgVals.length)+" dBm");
+
+    estimateAngles();
+    if(validNumber(state.centerAngle)){
+        setText("centerAngle",state.centerAngle.toFixed(1)+"°");
+        setText("localizerAngle",(state.centerAngle>=0?"+":"")+state.centerAngle.toFixed(1)+"°");
+        setText("angleLateral",Math.abs(state.centerAngle).toFixed(1)+"°");
+        setText("lateralError",Math.abs(state.centerAngle).toFixed(1)+"°");
+    }
+    if(validNumber(state.leftAngle)) setText("leftAngle",state.leftAngle.toFixed(1)+"°");
+    if(validNumber(state.rightAngle)) setText("rightAngle",state.rightAngle.toFixed(1)+"°");
+
+    setText("headingValue",formatAngle(state.heading));
+    setText("runwayHeading",formatAngle(state.heading));
+    setText("meridianValue",formatAngle(state.meridian));
+    if(validNumber(state.heading)&&validNumber(state.meridian)) setText("meridianOffset",(((state.heading-state.meridian+360)%360)).toFixed(1)+"°");
+
+    const confidence=calculateConfidence();
+    if(confidence!==null) setText("confidence",confidence+"%");
+    setText("lastUpdate",timeNow());
+    setText("centerIP",state.ip||"--");
+    setText("alignmentValue",state.alignment.toUpperCase());
+    setText("guidanceValue",state.guidance);
+    setText("geometryPosition",state.alignment.toUpperCase());
+    setText("geometryGuidance",state.guidance);
+    setText("leftPosition",state.alignment.toUpperCase());
+    setText("rightPosition",state.alignment.toUpperCase());
+    setText("buzzerState",state.guidance);
+    setText("leftDistance",validNumber(state.distance)?state.distance.toFixed(1)+" cm":"--");
+    setText("rightDistance",validNumber(state.distance)?state.distance.toFixed(1)+" cm":"--");
+
+    const count=[state.leftRSSI,state.centerRSSI,state.rightRSSI].filter(validNumber).length;
+    setText("nodeAgreement",count+" / 3");
+
+    updateAlignment(); updateFingerprint(); updateMap(); updateAgreement();
+}
+
+function updateAlignment(){
+    const text=document.getElementById("alignmentText");
+    const main=document.getElementById("alignmentValue");
+    const sub=document.getElementById("alignmentSub");
+    const aircraft=document.getElementById("aircraftIndicator");
+
+    if(state.alignment==="center"){
+        text.textContent="ON CENTERLINE"; main.textContent="ON CENTERLINE";
+        text.className="alignment-text green"; main.className="big-value green";
+        sub.textContent="CENTER ESP32: ALIGNED"; aircraft.style.left="50%";
+    } else if(state.alignment==="left"){
+        text.textContent="LEFT DRIFT"; main.textContent="LEFT DRIFT";
+        text.className="alignment-text blue"; main.className="big-value blue";
+        sub.textContent=state.guidance; aircraft.style.left="30%";
+    } else if(state.alignment==="right"){
+        text.textContent="RIGHT DRIFT"; main.textContent="RIGHT DRIFT";
+        text.className="alignment-text red"; main.className="big-value red";
+        sub.textContent=state.guidance; aircraft.style.left="70%";
+    } else {
+        text.textContent="WAITING"; main.textContent="WAITING";
+        text.className="alignment-text amber"; main.className="big-value amber";
+        sub.textContent="Waiting for real LEFT + RIGHT RSSI"; aircraft.style.left="50%";
+    }
+}
+
+function updateFingerprint(){
+    if(!validNumber(state.leftRSSI)||!validNumber(state.rightRSSI)){ setText("fingerprintPattern","WAITING"); return; }
+    const vals=[state.leftRSSI,state.centerRSSI,state.rightRSSI].filter(validNumber);
+    const max=Math.max(...vals);
+    let pattern=max===state.leftRSSI?"LEFT DOMINANT":max===state.rightRSSI?"RIGHT DOMINANT":"CENTER DOMINANT";
+    setText("fingerprintPattern",pattern);
+}
+
+function updateAgreement(){
+    const confidence=calculateConfidence();
+    if(confidence===null){setText("agreementScore","--");document.getElementById("agreementProgress").style.width="0%";setText("decisionText","WAITING FOR REAL DATA");return;}
+    setText("agreementScore",confidence+"%"); document.getElementById("agreementProgress").style.width=confidence+"%";
+    setText("decisionText",state.alignment==="center"?"CENTERLINE CONFIRMED":state.guidance);
+}
+
+function updateMap(){
+    const aircraft=document.getElementById("aircraftMap");
+    let x=50;
+    if(state.alignment==="left") x=43;
+    if(state.alignment==="right") x=57;
+    aircraft.style.left=x+"%";
+    let top=25;
+    if(validNumber(state.distance)){
+        top=82-Math.min(65,Math.max(0,state.distance*0.45));
+        top=Math.max(10,Math.min(82,top));
+    }
+    aircraft.style.top=top+"%";
+}
+
+function addHistory(){
+    if(!validNumber(state.leftRSSI)||!validNumber(state.centerRSSI)||!validNumber(state.rightRSSI)) return;
+    history.push({left:state.leftRSSI,center:state.centerRSSI,right:state.rightRSSI,time:new Date()});
+    if(history.length>60) history.shift();
+}
+
+function resizeCanvas(){
+    const rect=canvas.getBoundingClientRect(); const ratio=window.devicePixelRatio||1;
+    canvas.width=rect.width*ratio; canvas.height=rect.height*ratio; ctx.setTransform(ratio,0,0,ratio,0,0); drawChart();
+}
+window.addEventListener("resize",resizeCanvas);
+
+function drawChart(){
+    const rect=canvas.getBoundingClientRect(),width=rect.width,height=rect.height;
+    ctx.clearRect(0,0,width,height); ctx.strokeStyle="rgba(255,255,255,.07)"; ctx.lineWidth=1;
+    for(let y=0;y<=height;y+=40){ctx.beginPath();ctx.moveTo(0,y);ctx.lineTo(width,y);ctx.stroke();}
+    for(let x=0;x<=width;x+=60){ctx.beginPath();ctx.moveTo(x,0);ctx.lineTo(x,height);ctx.stroke();}
+    if(history.length<2) return;
+    const min=-100,max=-20;
+    function plot(key,stroke){
+        ctx.beginPath();ctx.strokeStyle=stroke;ctx.lineWidth=2;
+        history.forEach((item,i)=>{const x=i/(history.length-1)*width;const y=height-((item[key]-min)/(max-min))*height;if(i===0)ctx.moveTo(x,y);else ctx.lineTo(x,y);});
+        ctx.stroke();
+    }
+    plot("left","#45a3ff");plot("center","#25e39a");plot("right","#ff5570");
+    ctx.fillStyle="#8fa6c1";ctx.font="10px Arial";ctx.fillText("-20 dBm",5,12);ctx.fillText("-60 dBm",5,height/2);ctx.fillText("-100 dBm",5,height-5);
+}
+
+function applyFilters(){
+    const meridian=document.getElementById("meridianFilter").value;
+    const alignment=document.getElementById("alignmentFilter").value;
+    const rssi=document.getElementById("rssiFilter").value;
+    const node=document.getElementById("nodeFilter").value;
+    addLog("SYSTEM",`Filter updated: Meridian=${meridian}, Alignment=${alignment}, RSSI=${rssi}, Node=${node}`,"FILTER");
+}
+
+async function fetchESP32Data(){
+    try{
+        const response=await fetch(CONFIG.API_BASE_URL+"/api/status?t="+Date.now(),{cache:"no-store"});
+        if(!response.ok) throw new Error("HTTP "+response.status);
+        const data=await response.json();
+
+        /* EXACT JSON fields from the CENTER ESP32 */
+        state.leftRSSI=Number(data.leftRSSI);
+        state.rightRSSI=Number(data.rightRSSI);
+        state.centerRSSI=Number(data.centerRSSI);
+        state.difference=Number(data.difference);
+        state.alignment=String(data.position||"WAITING").toLowerCase();
+        state.guidance=String(data.guidance||"WAITING").toUpperCase();
+        state.distance=Number(data.distance);
+        state.ip=data.ip||"10.193.246.25";
+
+        document.getElementById("system-status");
+        document.querySelector(".system-status").style.color="var(--green)";
+        document.querySelector(".status-dot").style.background="var(--green)";
+        document.querySelector(".status-dot").style.boxShadow="0 0 12px var(--green)";
+        document.querySelector(".system-status").lastChild.textContent=" ESP32 LIVE";
+
+        setOnline("leftOnline",validNumber(state.leftRSSI));
+        setOnline("centerOnline",validNumber(state.centerRSSI));
+        setOnline("rightOnline",validNumber(state.rightRSSI));
+
+        addHistory(); updateUI(); drawChart();
+        if(validNumber(state.leftRSSI)&&validNumber(state.rightRSSI)) addLog("CENTER",`L=${Math.round(state.leftRSSI)} dBm | R=${Math.round(state.rightRSSI)} dBm | ${state.guidance}`,"LIVE");
+    }catch(error){
+        document.querySelector(".system-status").style.color="var(--red)";
+        document.querySelector(".status-dot").style.background="var(--red)";
+        document.querySelector(".status-dot").style.boxShadow="0 0 12px var(--red)";
+        document.querySelector(".system-status").lastChild.textContent=" ESP32 OFFLINE";
+        setOnline("leftOnline",false);setOnline("centerOnline",false);setOnline("rightOnline",false);
+        addLog("SYSTEM","ESP32 API unavailable: "+error.message,"ERROR");
+    }
+}
+
+function updateSystem(){ fetchESP32Data(); }
+
+clearInitialValues();
+addLog("SYSTEM","REAL ESP32 dashboard initialized — simulation disabled","READY");
+addLog("ESP32-L","Waiting for real LEFT RSSI","WAITING");
+addLog("ESP32-C","Waiting for real CENTER API","WAITING");
+addLog("ESP32-R","Waiting for real RIGHT RSSI","WAITING");
+resizeCanvas();
+updateSystem();
+setInterval(updateSystem,CONFIG.UPDATE_INTERVAL);
+</script>
+</body>
+</html>
